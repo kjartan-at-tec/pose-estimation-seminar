@@ -1,4 +1,4 @@
-function [xhat, meas] = accEKF(calAcc, calGyr, calMag)
+function [xhat, meas] = accMagEKF(m0, calAcc, calGyr, calMag)
 % FILTERTEMPLATE  Filter template
 %
 % This is a template function for how to collect and filter data
@@ -25,9 +25,11 @@ function [xhat, meas] = accEKF(calAcc, calGyr, calMag)
   t0 = [];  % Initial time (initialize on first data received)
   nx = 4;
   % Add your filter settings here.
-  g0 = [0;0;9.78]; % The direction of the grav acc
-  Ra = 4e-1*eye(3); % Acc cov
-  Rw = 1e-2 * eye(4); % Prediction cov
+  g0 = [0;0;9.88]; % The direction of the grav acc
+  Ra = 5e-1*eye(3); % Acc cov
+  m0 = [0; 31.60;-22.5];
+  Rm = 5e-1*eye(3); % Mag cov
+  Rw = 1e-3 * eye(4); % Prediction cov
   
   % Current filter state.
   x = [1; 0; 0 ;0];
@@ -67,6 +69,11 @@ function [xhat, meas] = accEKF(calAcc, calGyr, calMag)
   %% Filter loop
   while server.status()  % Repeat while data is available
       
+    % Sanity check  
+    if ( any(isnan(x)) | any(isnan(P)) )
+        keyboard
+    end
+    
     % Get the next measurement set, assume all measurements
     % within the next 5 ms are concurrent (suitable for sampling
     % in 100Hz).
@@ -87,9 +94,10 @@ function [xhat, meas] = accEKF(calAcc, calGyr, calMag)
         % Prediction step
         dt = t-t0;
         t0 = t;
-        [x, P] = tu_qw(x, P, gyr, dt, Rw);
-
-        % Do something
+        if dt>0
+            [x, P] = tu_qw(x, P, gyr, dt, Rw);
+        end
+        
     end
 
     acc = data(1, 2:4)';
@@ -100,7 +108,7 @@ function [xhat, meas] = accEKF(calAcc, calGyr, calMag)
 
     mag = data(1, 8:10)';
     if ~any(isnan(mag))  % Mag measurements are available.
-      % Do something
+      [x, P] = mu_mag(x, P, mag, Rm, m0);
     end
 
     orientation = data(1, 18:21)';  % Google's orientation estimate.

@@ -1,43 +1,13 @@
-function [xhat, meas] = accEKF(calAcc, calGyr, calMag)
-% FILTERTEMPLATE  Filter template
-%
-% This is a template function for how to collect and filter data
-% sent from a smartphone live.  Calibration data for the
-% accelerometer, gyroscope and magnetometer assumed available as
-% structs with fields m (mean) and R (variance).
-%
-% The function returns xhat as an array of structs comprising t
-% (timestamp), x (state), and P (state covariance) for each
-% timestamp, and meas an array of structs comprising t (timestamp),
-% acc (accelerometer measurements), gyr (gyroscope measurements),
-% mag (magnetometer measurements), and orint (orientation quaternions
-% from the phone).  Measurements not availabe are marked with NaNs.
-%
-% As you implement your own orientation estimate, it will be
-% visualized in a simple illustration.  If the orientation estimate
-% is checked in the Sensor Fusion app, it will be displayed in a
-% separate view.
+function [xhat, meas] = hist_acc_gyro()
+% Collects data and creates histograms
 
   %% Setup necessary infrastructure
   import('se.hendeby.sensordata.*');  % Used to receive data.
 
-  %% Filter settings
-  t0 = [];  % Initial time (initialize on first data received)
-  nx = 4;
-  % Add your filter settings here.
-  g0 = [0;0;9.78]; % The direction of the grav acc
-  Ra = 4e-1*eye(3); % Acc cov
-  Rw = 1e-2 * eye(4); % Prediction cov
   
-  % Current filter state.
-  x = [1; 0; 0 ;0];
-  P = eye(nx, nx);
-
-  % Saved filter states.
-  xhat = struct('t', zeros(1, 0),...
-                'x', zeros(nx, 0),...
-                'P', zeros(nx, nx, 0));
-
+  % Saved data.
+  nx = 3;
+ 
   meas = struct('t', zeros(1, 0),...
                 'acc', zeros(3, 0),...
                 'gyr', zeros(3, 0),...
@@ -57,13 +27,8 @@ function [xhat, meas] = accEKF(calAcc, calGyr, calMag)
     return;
   end
 
-  % Used for visualization.
-  figure(1);
-  subplot(1, 2, 1);
-  ownView = OrientationView('Own filter', gca);  % Used for visualization.
-  googleView = [];
-  counter = 0;  % Used to throttle the displayed frame rate.
-
+  t0 = [];
+  
   %% Filter loop
   while server.status()  % Repeat while data is available
       
@@ -81,6 +46,7 @@ function [xhat, meas] = accEKF(calAcc, calGyr, calMag)
       t0 = t;
     end
 
+    if (t + 
     
     gyr = data(1, 5:7)';
     if ~any(isnan(gyr))  % Gyro measurements are available.

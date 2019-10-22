@@ -9,4 +9,4 @@ x = (cos(wThalf)*eye(4) + T/2*(sin(wThalf)/wThalf)*Sw)*x;
 
 F = eye(4) + 0.5*T*Sw;
 
-P = F*PF + Rw;
+P = F*P*F + Rw;
